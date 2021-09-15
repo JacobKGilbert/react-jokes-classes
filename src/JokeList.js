@@ -17,39 +17,44 @@ class JokeList extends React.Component {
   }
 
   vote(id, delta) {
-    const js = (allJokes) =>
-      allJokes.map((j) => (j.id === id ? { ...j, votes: j.votes + delta } : j))
+    const js = this.state.jokes.map((j) => (j.id === id ? { ...j, votes: j.votes + delta } : j))
     this.setState({ jokes: js })
   }
 
-  getJokes() {
-    async function gJ () {
-      let j = [...this.state.jokes]
-      let seenJokes = new Set()
-      try {
-        while (j.length < this.props.numJokesToGet) {
-          let res = await axios.get('https://icanhazdadjoke.com', {
-            headers: { Accept: 'application/json' },
-          })
-          let { status, ...jokeObj } = res.data
+  async getJokes() {
+    let j = [...this.state.jokes]
+    let seenJokes = new Set()
+    try {
+      while (j.length < this.props.numJokesToGet) {
+        let res = await axios.get("https://icanhazdadjoke.com", {
+          headers: { Accept: "application/json" }
+        });
+        let { status, ...jokeObj } = res.data;
 
-          if (!seenJokes.has(jokeObj.id)) {
-            seenJokes.add(jokeObj.id)
-            j.push({ ...jokeObj, votes: 0 })
-          } else {
-            console.error('duplicate found!')
-          }
+        if (!seenJokes.has(jokeObj.id)) {
+          seenJokes.add(jokeObj.id);
+          j.push({ ...jokeObj, votes: 0 });
+        } else {
+          console.error("duplicate found!");
         }
-        this.setState({ jokes: [...j] })
-      } catch (e) {
-        console.log(e)
       }
+      this.setState({ jokes: j });
+    } catch (e) {
+      console.log(e);
     }
-    gJ()
   }
 
-  componentDidMount() {
-    if (this.state.jokes.length === 0) this.getJokes()
+  async componentDidMount() {
+    if (this.state.jokes.length === 0) await this.getJokes()
+  }
+
+  async componentDidUpdate(prevProps, prevState) {
+    if (this.props.numJokesToGet !== prevProps.numJokesToGet) {
+      if (this.state.jokes.length === 0) await this.getJokes()
+    }
+    if (this.state.jokes !== prevState.jokes) {
+      if (this.state.jokes.length === 0) await this.getJokes()
+    }
   }
 
   render() {
